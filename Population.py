@@ -34,12 +34,13 @@ class Population:
         cell = self.cells[cell_idx]
         print("Cell {}: size = {}, x = {}, y = {}".format(cell_idx, cell.size, cell.x, cell.y))
 
-    def find_close_pairs(self):
+    def find_overlapping_pairs(self):
+        distance_tol = 14
         df = self.return_df()
         df2 = pd.DataFrame(np.sqrt(df["x"] * df["x"] + df["y"] * df["y"]), columns=['distance'])
         df2.sort_values('distance', inplace=True)
         distances = df2.diff()
-        short_distances = list(distances[distances['distance'] < 14].index)
+        short_distances = list(distances[distances['distance'] < distance_tol].index)
 
         close_tuples = []
         for r1 in short_distances:
@@ -50,3 +51,19 @@ class Population:
                 close_tuples.append((r1, r2))
 
         return close_tuples
+
+    def move_overlapping_pairs(self):
+        close_tuples = self.find_overlapping_pairs()
+        max_cell_size = math.ceil(self.mu + 2 * self.sigma)
+
+        for pair in close_tuples:
+
+            a = self.cells[pair[0]]
+            b = self.cells[pair[1]]
+
+            direction = (b.x - a.x, b.y - a.y)
+
+            multiple = math.sqrt((4 * max_cell_size ** 2) / (direction[0] ** 2 + direction[1] ** 2))
+            multiple = math.ceil(multiple)
+            self.cells[pair[1]].x = self.cells[pair[0]].x + multiple * direction[0]
+            self.cells[pair[1]].y = self.cells[pair[0]].y + multiple * direction[1]
